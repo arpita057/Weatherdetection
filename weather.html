@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Farmer Weather & Soil Forecast</title>
+
+    <style>
+      /* =============== animated green background =============== */
+      :root {
+        /* tweak these to shift the green palette */
+        --g1: #2e7d32;
+        --g2: #558b2f;
+        --g3: #7cb342;
+        --g4: #aed581;
+      }
+      @keyframes greenWave {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        text-align: center;
+
+        /* animated gradient */
+        background: linear-gradient(
+          -45deg,
+          var(--g1),
+          var(--g2),
+          var(--g3),
+          var(--g4),
+          var(--g3),
+          var(--g2)
+        );
+        background-size: 400% 400%;
+        animation: greenWave 20s ease-in-out infinite;
+
+        /* in case JS later swaps to something else */
+        transition: background 0.6s ease-in-out;
+        background-attachment: fixed;
+      }
+
+      /* ================= existing rules (mostly untouched) ================= */
+      header {
+        background: rgba(13, 203, 83, 0.9);
+        color: #fff;
+        padding: 8px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 16px;
+      }
+      #map {
+        width: 100%;
+        height: 450px;
+        border: none;
+      }
+
+      /* frosted-glass cards so the animation peeks through */
+      .info-box {
+        background: rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        padding: 15px;
+        margin: 15px auto;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 800px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        text-align: center;
+      }
+
+      .nearby-weather {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .nearby-item {
+        background: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        padding: 10px;
+        border-radius: 8px;
+        width: 180px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+      }
+      footer {
+        background: #2c3e50;
+        color: #fff;
+        padding: 10px;
+        text-align: center;
+        margin-top: 20px;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <h1>Farmer Weather Forecast</h1>
+      <button>
+        <a href="/" style="color: #000; font-weight: bold">Home</a>
+      </button>
+    </header>
+
+    <iframe
+      id="map"
+      src="https://www.ventusky.com/?p=21.0545;86.5156;5&l=temperature&menu=1&search=1"
+      frameborder="0"
+    ></iframe>
+
+    <div class="info-box">
+      <h2>📍 Current Location Weather</h2>
+      <div
+        style="
+          display: flex;
+          align-items: center;
+          justify-content: space-around;
+          flex-wrap: wrap;
+        "
+      >
+        <div style="flex: 1; min-width: 150px; text-align: center">
+          <p
+            id="current-weather-data"
+            style="font-size: 18px; font-weight: bold"
+          >
+            Fetching weather...
+          </p>
+          <img
+            id="weather-icon"
+            src=""
+            alt="Weather Icon"
+            style="width: 80px; height: 80px; margin: 10px auto"
+          />
+        </div>
+        <div style="flex: 2; min-width: 200px">
+          <p>🌡️ <strong>Temperature:</strong> <span id="temp"></span>°C</p>
+          <p>💧 <strong>Humidity:</strong> <span id="humidity"></span>%</p>
+          <p>🌬️ <strong>Wind Speed:</strong> <span id="wind"></span> km/h</p>
+          <p>📊 <strong>Pressure:</strong> <span id="pressure"></span> hPa</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <h2>🌍 Nearby Locations Weather</h2>
+      <div
+        id="nearby-weather-data"
+        class="nearby-weather"
+        style="
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+          gap: 15px;
+        "
+      >
+        Fetching nearby places...
+      </div>
+    </div>
+
+    <footer>
+      <p>🌱 Powered by OpenWeather &amp; Ventusky</p>
+      <p>© 2025 | Agricultural Insights</p>
+    </footer>
+
+    <script>
+      const apiKey = "1bd211ccac1acd763da13e547abcf657";
+      const defaultLat = 21.0545,
+        defaultLon = 86.5156;
+
+      const fetchWeather = (lat, lon) =>
+        fetch(
+          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`
+        )
+          .then((r) => r.json())
+          .catch((e) => console.error("Error fetching:", e));
+
+      function updateWeather(data) {
+        if (!data || !data.main) {
+          document.getElementById("current-weather-data").textContent =
+            "Error fetching weather data.";
+          return;
+        }
+
+        document.getElementById("current-weather-data").textContent =
+          "Bhadrak - " + data.weather[0].description;
+        document.getElementById("temp").textContent = Math.round(
+          data.main.temp
+        );
+        document.getElementById("humidity").textContent = data.main.humidity;
+        document.getElementById("wind").textContent = data.wind.speed;
+        document.getElementById("pressure").textContent = data.main.pressure;
+
+        const icon = document.getElementById("weather-icon");
+        icon.src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
+        icon.alt = data.weather[0].description;
+
+        fetchNearbyCities(data.coord.lat, data.coord.lon);
+      }
+
+      function fetchNearbyCities(lat, lon) {
+        const offsets = [
+          { latOffset: 0.5, lonOffset: 0.5 },
+          { latOffset: -0.5, lonOffset: -0.5 },
+          { latOffset: 0.5, lonOffset: -0.5 },
+          { latOffset: -0.5, lonOffset: 0.5 },
+        ];
+        const box = document.getElementById("nearby-weather-data");
+        box.innerHTML = "Fetching nearby places...";
+        Promise.all(
+          offsets.map((o) => fetchWeather(lat + o.latOffset, lon + o.lonOffset))
+        ).then((results) => {
+          box.innerHTML = "";
+          results.forEach((d) => {
+            if (d && d.main) {
+              const div = document.createElement("div");
+              div.className = "nearby-item";
+              div.innerHTML = `<strong>📍 ${d.name}</strong><br>
+              🌡️ Temp: ${Math.round(d.main.temp)}°C<br>
+              ☁️ ${d.weather[0].description}`;
+              box.appendChild(div);
+            }
+          });
+        });
+      }
+
+      fetchWeather(defaultLat, defaultLon).then(updateWeather);
+    </script>
+  </body>
+</html>
