@@ -172,10 +172,9 @@
       <p>© 2025 | Agricultural Insights</p>
     </footer>
 
+    <script src="config.js"></script>
     <script>
-      const apiKey = "1bd211ccac1acd763da13e547abcf657";
-      const defaultLat = 21.0545,
-        defaultLon = 86.5156;
+      const apiKey = OPENWEATHER_KEY;
 
       const fetchWeather = (lat, lon) =>
         fetch(
